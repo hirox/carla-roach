@@ -60,7 +60,6 @@ data_collect () {
 
 # NO NEED TO MODIFY THE FOLLOWING
 # activate conda env
-source ~/miniconda3/etc/profile.d/conda.sh
 conda activate carla
 
 # remove checkpoint files
