@@ -1,0 +1,140 @@
+# Private functions
+function _cr-create-conda-env {
+    local env_name="carla"
+    local current_dir=$(pwd)
+    
+    # Check if the conda environment already exists
+    if conda info --envs | grep -q "^$env_name "; then
+        echo "Conda environment '$env_name' already exists. Skipping creation."
+    else
+        echo "Creating conda environment '$env_name'..."
+        
+        # Change to the required directory and remember it
+        pushd $(cr-cd;pwd) > /dev/null || { echo "Failed to change directory"; return 1; }
+        
+        if conda env create -f environment.yml --name "$env_name"; then
+            echo "Conda environment '$env_name' created successfully."
+        else
+            echo "Failed to create conda environment '$env_name'."
+            popd > /dev/null  # Return to the original directory
+            return 1
+        fi
+        
+        # Return to the original directory
+        popd > /dev/null
+    fi
+
+    # Activate the conda environment
+    echo "Activating conda environment '$env_name'..."
+    if conda activate "$env_name"; then
+        echo "Conda environment '$env_name' activated successfully."
+    else
+        echo "Failed to activate conda environment '$env_name'."
+        return 1
+    fi
+
+    # Change back to the original directory
+    cd "$current_dir" || { echo "Failed to return to the original directory"; return 1; }
+}
+
+function _cr-find-carla {
+    (
+        cr-cd
+
+        # carlaディレクトリの中のディレクトリから最新バージョンのディレクトリ名を取得
+        local CARLA_ROOT=$(find carla -maxdepth 1 -type d -name "carla-*" 2>/dev/null | sort -V | tail -n 1)
+        if [ -d "${CARLA_ROOT}" ]; then
+            echo "${CARLA_ROOT}"
+        fi
+    )
+}
+
+function _cr-install-carla {
+    (
+        cr-cd
+
+        CARLA_ROOT=$(_cr-find-carla)
+        if [ -z "${CARLA_ROOT}" ]; then
+            if [ ! -d "carla" ]; then
+                mkdir carla || return 1
+            fi
+            cd carla
+
+            CARLA_VERSION=carla-0-9-15-linux
+            if [ ! -f ${CARLA_VERSION}.tar.gz ]; then
+                wget -O ${CARLA_VERSION}.tar.gz https://tiny.carla.org/${CARLA_VERSION}
+            else
+                echo "File already exists: ${CARLA_VERSION}.tar.gz"
+            fi
+            mkdir -p ${CARLA_VERSION}
+            cd ${CARLA_VERSION} || return 1
+            tar -I pigz -xvf ../${CARLA_VERSION}.tar.gz || return 1
+
+            # Additional maps
+            cd Import || return 1
+            wget https://tiny.carla.org/additional-maps-0-9-15-linux || return 1
+            cd ..
+            bash ImportAssets.sh || return 1
+
+            # rm -r carla-0-9-15-linux Import/additional-maps-0-9-15-linux
+        else
+            cd ${CARLA_ROOT}
+            echo "Carla already installed at $(pwd)"
+        fi
+
+        # .bashrcにCARLA_ROOTが設定されいない場合は設定
+        grep -q "export CARLA_ROOT=" ~/.bashrc || echo "export CARLA_ROOT=$(pwd)" >> ~/.bashrc || return 1
+
+        echo "Successfully installed Carla at ${CARLA_ROOT}"
+        return 0
+    )
+
+    if [[ $? -eq 0 ]]; then
+        # Set CARLA_ROOT environment variable
+        CARLA_ROOT=$(_cr-find-carla)
+        local RET=$(
+            # Get absolute path
+            cr-cd
+            cd $CARLA_ROOT
+            echo $(pwd)
+        )
+        CARLA_ROOT=$RET
+        export CARLA_ROOT
+    fi
+}
+
+function _cr-install-carla-egg {
+    (
+        cr-cd
+        EGG_FILE=$(ls ${CARLA_ROOT}/PythonAPI/carla/dist/carla-*-py3.7-linux-x86_64.egg 2>/dev/null | sort -V | tail -n 1)
+        if [ -n "$EGG_FILE" ]; then
+            easy_install "$EGG_FILE"
+        else
+            _cr-show-status $? "No matching .egg file found."
+        fi
+    )
+}
+
+# Public functions
+function cr-initial-setup {
+    if _cr-create-conda-env; then
+        echo "Conda environment setup completed successfully."
+        echo "Current directory: $(pwd)"
+    else
+        echo "Conda environment setup failed."
+    fi
+
+    _cr-install-carla-egg
+}
+
+function cr-carla {
+    CARLA_ROOT=$(_cr-find-carla)
+    if [ -z "${CARLA_ROOT}" ]; then
+        echo "Carla is not installed. Run cr-initial-setup to install Carla."
+    else
+        (
+            cd "${CARLA_ROOT}" || return 1
+            ./CarlaUE4.sh
+        )
+    fi
+}

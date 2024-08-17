@@ -1,0 +1,102 @@
+# Private functions
+function _cr-run-container() {
+	(
+		cr-cd-docker
+		./run.sh
+	)
+}
+
+function _cr-docker-get-container-name() {
+	(
+		CONTAINER_NAME=$(docker ps --format="{{.Names}}" | grep $CARLA_ROACH_CONTAINER_NAME)
+		echo "$CONTAINER_NAME"
+	)
+}
+
+function _cr-docker-create-home-directly() {
+    echo -n "Creating home directory ... "
+    RET=$(docker exec \
+        -u root \
+        "$1" \
+        bash -c " \
+            mkdir -p /home/${USER} && \
+            echo 'export PS1=\"🐋\u@\[\e[36m\]\h\[\e[m\]:\w\$ \"' > /home/${USER}/.profile && \
+            chown -R ${USER}:${USER} /home/${USER} \
+        ")
+    _cr-show-status $? "$RET"
+}
+
+function _cr-docker-add-safe-directly() {
+    echo -n "Adding safe directory ... "
+    RET=$(docker exec "$1" bash -c " \
+        TARGET_DIR='$2'; \
+        EXISTING_DIRS=\$(git config --global --get-all safe.directory 2>/dev/null); \
+        if ! echo \"\$EXISTING_DIRS\" | grep -Fxq \"\$TARGET_DIR\"; then \
+            git config --global --add safe.directory \"\$TARGET_DIR\"; \
+        fi")
+    _cr-show-status $? "$RET"
+}
+
+function _cr-docker-run-conda-init() {
+    echo -n "Run conda init ... "
+    RET=$(docker exec "$1" bash -c " \
+            conda init && \
+            echo 'if [ -f ~/.bashrc ]; then . ~/.bashrc; fi' >> /home/${USER}/.bash_profile
+        ")
+    _cr-show-status $? "$RET"
+}
+
+function _cr-docker-start-if-not-running() {
+	(
+		CONTAINER_NAME=$(_cr-docker-get-container-name)
+		if [ -z "$CONTAINER_NAME" ]; then
+			TMP=$(_cr-run-container)
+			CONTAINER_NAME=$(docker ps --format="{{.Names}}" | grep $CARLA_ROACH_CONTAINER_NAME)
+
+            _cr-docker-create-home-directly "${CONTAINER_NAME}"
+            _cr-docker-add-safe-directly "${CONTAINER_NAME}" "/app"
+            _cr-docker-run-conda-init "${CONTAINER_NAME}"
+		fi
+	)
+}
+
+function _cr_into {
+	CONTAINER_NAME=$(_cr-docker-get-container-name)
+	if [ -n "$CONTAINER_NAME" ]; then
+		it=""
+		# check TTY
+		if [ -t 1 ]; then
+			it="-it"
+		fi
+
+		if [ $# -eq 0 ]; then
+			docker exec $it "${CONTAINER_NAME}" /bin/bash --login
+		else
+			docker exec $it "${CONTAINER_NAME}" "$@"
+		fi
+	fi
+}
+
+# Public functions
+function cr-docker-build-and-push {	# build and push docker image
+	(
+		cr-cd-docker
+		./build_and_push.sh
+	)
+}
+
+function cr-into {			# run container and login
+	(
+		_cr-docker-start-if-not-running
+		_cr_into $@
+	)
+}
+
+function cr-stop {			# stop container
+	(
+		cr-cd-docker
+		export DOCKER_UID=$(id -u)
+		export DOCKER_GID=$(id -g)
+		docker compose down
+	)
+}

@@ -1,0 +1,42 @@
+services:
+  carla-roach:
+    image: suzuca/omnipotent-banana
+    user: "${DOCKER_UID}:${DOCKER_GID}"
+    container_name: carla-roach
+    hostname: carla-roach
+    privileged: true
+    build:
+      context: .
+      dockerfile: Dockerfile
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              capabilities: [compute, utility, video, graphics, display]
+    cap_add:
+      - SYS_ADMIN # for fuse
+    devices:
+      - "/dev/fuse:/dev/fuse"
+    security_opt:
+      - apparmor=unconfined # for fuse
+    environment:
+      - DISPLAY=${DISPLAY}
+      # for audio
+      - PULSE_SERVER=unix:${XDG_RUNTIME_DIR}/pulse/native
+      - PULSE_COOKIE=/tmp/pulse/cookie
+    volumes:
+      - /tmp/.X11-unix:/tmp/.X11-unix
+      - /usr/share/vulkan/icd.d:/usr/share/vulkan/icd.d:ro # for vulkan
+      - /etc/passwd:/etc/passwd:ro
+      - /etc/group:/etc/group:ro
+      - /etc/shadow:/etc/shadow:ro
+      - ${CARLA_ROACH_SETUPRC_DIR}:/app
+      # for audio
+      - ${XDG_RUNTIME_DIR}/pulse/native:${XDG_RUNTIME_DIR}/pulse/native
+      - ${XDG_RUNTIME_DIR}/pulse/native:/tmp/pulse/native
+      - ~/.config/pulse/cookie:/tmp/pulse/cookie:ro
+    shm_size: '2gb'
+    #ports:
+    #  - "3000:3000"
+    restart: unless-stopped

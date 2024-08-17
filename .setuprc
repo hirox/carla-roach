@@ -1,0 +1,32 @@
+export CARLA_ROACH_SETUPRC_DIR
+CARLA_ROACH_SETUPRC_DIR=$(cd "$(dirname "${BASH_SOURCE:-$0}")" || exit; pwd)
+
+CARLA_ROACH_CONTAINER_NAME=carla-roach
+
+# Common internal functions
+function _cr-show-status() {
+	RET_CODE=$1
+	RET_TEXT=$2
+	if [ $RET_CODE -eq 0 ]; then
+		echo -e "\033[32mdone\033[0m"
+	else
+		echo -e "\033[31mfailed\033[0m: $RET_CODE"
+		echo "$RET_TEXT"
+	fi
+}
+
+# Common functions
+function cr-cd {
+	cd "${CARLA_ROACH_SETUPRC_DIR}" || return 1
+}
+
+function cr-cd-docker {
+	cd "${CARLA_ROACH_SETUPRC_DIR}/docker" || return 1
+}
+
+# Source inside/outside docker setuprc
+if [[ $(uname -n) =~ $CARLA_ROACH_CONTAINER_NAME ]]; then
+	source "${CARLA_ROACH_SETUPRC_DIR}/.setuprc-inside-docker"
+else
+	source "${CARLA_ROACH_SETUPRC_DIR}/.setuprc-outside-docker"
+fi
