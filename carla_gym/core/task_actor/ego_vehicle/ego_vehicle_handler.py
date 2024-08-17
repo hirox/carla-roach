@@ -32,6 +32,12 @@ class EgoVehicleHandler(object):
         ev_spawn_locations = []
         for ev_id in actor_config:
             bp_filter = actor_config[ev_id]['model']
+
+            # Special treatment for Lincoln MKZ 2017
+            if bp_filter == 'vehicle.lincoln.mkz2017':
+                bp_filter = 'vehicle.lincoln.mkz_2017'
+                print(f"Corrected model name to: {bp_filter}")
+
             blueprint = np.random.choice(self._world.get_blueprint_library().filter(bp_filter))
             blueprint.set_attribute('role_name', ev_id)
 

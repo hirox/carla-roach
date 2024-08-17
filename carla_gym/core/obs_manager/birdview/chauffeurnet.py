@@ -69,7 +69,17 @@ class ObsManager(ObsManagerBase):
         self._parent_actor = parent_actor
         self._world = self._parent_actor.vehicle.get_world()
 
-        maps_h5_path = self._map_dir / (self._world.get_map().name + '.h5')
+        original_map_name = self._world.get_map().name
+        original_maps_h5_path = self._map_dir / f"{original_map_name}.h5"
+
+        # Try to load the map from the original path
+        if original_maps_h5_path.exists():
+            maps_h5_path = original_maps_h5_path
+        else:
+            # If the map is not found, try to load the map from the parent directory
+            map_name = Path(original_map_name).name
+            maps_h5_path = self._map_dir / f"{map_name}.h5"
+
         with h5py.File(maps_h5_path, 'r', libver='latest', swmr=True) as hf:
             self._road = np.array(hf['road'], dtype=np.uint8)
             self._lane_marking_all = np.array(hf['lane_marking_all'], dtype=np.uint8)
@@ -116,7 +126,21 @@ class ObsManager(ObsManagerBase):
             c_ev = abs(ev_loc.x - w.location.x) < 1.0 and abs(ev_loc.y - w.location.y) < 1.0
             return c_distance and (not c_ev)
 
-        vehicle_bbox_list = self._world.get_level_bbs(carla.CityObjectLabel.Vehicles)
+        try:
+            # Try the old CARLA way first
+            vehicle_bbox_list = self._world.get_level_bbs(carla.CityObjectLabel.Vehicles)
+        except AttributeError:
+            try:
+                # If that fails, try the new CARLA way
+                vehicle_bbox_list = self._world.get_level_bbs(carla.CityObjectLabel.Car)
+                vehicle_bbox_list.extend(self._world.get_level_bbs(carla.CityObjectLabel.Truck))
+                vehicle_bbox_list.extend(self._world.get_level_bbs(carla.CityObjectLabel.Bus))
+                vehicle_bbox_list.extend(self._world.get_level_bbs(carla.CityObjectLabel.Motorcycle))
+                vehicle_bbox_list.extend(self._world.get_level_bbs(carla.CityObjectLabel.Bicycle))
+            except AttributeError as e:
+                print(f"Warning: Error accessing CityObjectLabel: {e}")
+                print("Unable to get bounding boxes. Returning empty lists.")
+                vehicle_bbox_list = []
         walker_bbox_list = self._world.get_level_bbs(carla.CityObjectLabel.Pedestrians)
         if self._scale_bbox:
             vehicles = self._get_surrounding_actors(vehicle_bbox_list, is_within_distance, 1.0)
