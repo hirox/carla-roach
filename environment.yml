@@ -235,4 +235,4 @@ dependencies:
     - subprocess32==3.5.4
     - tifffile==2020.10.1
     - typing-extensions==3.7.4.3
-    - wandb==0.10.12
+    - wandb==0.17.7
