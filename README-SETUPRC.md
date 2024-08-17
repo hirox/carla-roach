@@ -17,9 +17,12 @@
    ```
 
 3. 初回セットアップ時は、コンテナ内で以下のコマンドを実行します：
+
    ```bash
    cr-initial-setup
    ```
+
+4. [CARLA 関連の操作](#carla-関連のコマンド)
 
 ## 詳細な使用方法
 
@@ -49,6 +52,32 @@ cr-initial-setup
 
 このコマンドは、Conda 環境を作成し、必要な CARLA egg ファイルをインストールします。
 
+### CARLA 関連のコマンド
+
+- `cr-carla`: CARLA の起動 (サーバー)
+
+  ```bash
+  cr-carla
+  ```
+
+- 手動操作のサンプルを実行する
+
+  `cr-carla` を実行して CARLA サーバーを起動し、別のターミナルで以下のコマンドを実行します：
+
+  ```bash
+  $ cd $CARLA_ROOT
+  $ cd PythonAPI/examples
+  $ python manual_control.py
+  ```
+
+- データ収集コマンドの実行
+
+  `cr-carla` を実行して CARLA サーバーを起動し、別のターミナルで以下のコマンドを実行します：
+
+  ```bash
+  $ run/data_collect_bc.sh
+  ```
+
 ### その他の公開関数
 
 - `cr-docker-build-and-push`: Docker イメージをビルドしてプッシュします。
@@ -67,10 +96,4 @@ cr-initial-setup
 
   ```bash
   cr-cd-docker
-  ```
-
-- `cr-carla`: CARLA の起動
-
-  ```bash
-  cr-carla
   ```
