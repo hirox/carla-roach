@@ -176,7 +176,7 @@ function cr-carla {
     else
         (
             cd "${CARLA_ROOT}" || return 1
-            ./CarlaUE4.sh
+            ./CarlaUE4.sh -RenderOffscreen
         )
     fi
 }
