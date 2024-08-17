@@ -1,5 +1,24 @@
 #!/bin/bash
 
+# Function to determine the default dataset root
+get_default_dataset_root() {
+    if [ -d "/home/ubuntu" ]; then
+        echo "/home/ubuntu/dataset/bc"
+    else
+        echo "/app/dataset/bc"
+    fi
+}
+
+# Parse command line arguments
+DATASET_ROOT=$(get_default_dataset_root)
+while [[ "$#" -gt 0 ]]; do
+    case $1 in
+        --dataset_root) DATASET_ROOT="$2"; shift ;;
+        *) echo "Unknown parameter passed: $1"; exit 1 ;;
+    esac
+    shift
+done
+
 # * To collect from Roach for the Leaderboard benchmark
 data_collect () {
   python -u data_collect.py resume=true log_video=false save_to_wandb=true \
@@ -7,7 +26,7 @@ data_collect () {
   wb_group=bc_data \
   test_suites=lb_data \
   n_episodes=160 \
-  dataset_root=/home/ubuntu/dataset/bc \
+  dataset_root="${DATASET_ROOT}" \
   actors.hero.driver=ppo \
   agent.ppo.wb_run_path=iccv21-roach/trained-models/1929isj0 \
   agent.ppo.wb_ckpt_step=null \
@@ -27,7 +46,7 @@ data_collect () {
 #   wb_group=bc_data \
 #   test_suites=eu_data \
 #   n_episodes=80 \
-#   dataset_root=/home/ubuntu/dataset/bc \
+#   dataset_root="${DATASET_ROOT}" \
 #   actors.hero.driver=roaming \
 #   agent/cilrs/obs_configs=central_rgb_wide \
 #   inject_noise=true \
@@ -40,7 +59,7 @@ data_collect () {
 
 
 # NO NEED TO MODIFY THE FOLLOWING
-# actiate conda env
+# activate conda env
 source ~/miniconda3/etc/profile.d/conda.sh
 conda activate carla
 
