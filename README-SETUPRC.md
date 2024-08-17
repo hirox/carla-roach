@@ -72,7 +72,7 @@ cr-initial-setup
 
 - データ収集コマンドの実行
 
-  `cr-carla` を実行して CARLA サーバーを起動し、別のターミナルで以下のコマンドを実行します：
+  **`cr-carla` を実行せずに**以下のコマンドを実行します：
 
   ```bash
   $ run/data_collect_bc.sh
