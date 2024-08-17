@@ -167,6 +167,8 @@ function cr-initial-setup {
 
     _cr-find-carla
     _cr-install-carla-egg
+
+    wandb login
 }
 
 function cr-carla {
