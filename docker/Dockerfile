@@ -13,9 +13,13 @@ RUN apt update && \
     xdg-user-dirs \
     libsdl2-2.0 \
     libvulkan1 \
+    libjpeg-dev \
+    # font
+    fonts-dejavu \
     # for vulkan
     libgl1 \
     && \
+    # clean up
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
