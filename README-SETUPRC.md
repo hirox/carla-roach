@@ -10,6 +10,8 @@
    source /PATH/TO/.setuprc
    ```
 
+   [.setuprc の自動読み込み](#setuprc-の自動読み込み)
+
 2. Docker コンテナに入ります：
 
    ```bash
@@ -26,7 +28,7 @@
 
 ## 詳細な使用方法
 
-### .setuprc の source
+### .setuprc の自動読み込み
 
 新しいシェルセッションごとに自動的に .setuprc をロードするには、`.bashrc`に以下の行を追加してください：
 
