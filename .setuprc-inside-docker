@@ -91,47 +91,31 @@ function _cr-install-carla {
             fi
             cd carla
 
-            CARLA_VERSION=carla-0-9-15-linux
-            if [ ! -f ${CARLA_VERSION}.tar.gz ]; then
-                wget -O ${CARLA_VERSION}.tar.gz https://tiny.carla.org/${CARLA_VERSION}
+            CARLA_VERSION=0-9-15-linux
+            CARLA_FILENAME=carla-${CARLA_VERSION}
+            if [ ! -f ${CARLA_FILENAME}.tar.gz ]; then
+                wget -O ${CARLA_FILENAME}.tar.gz https://tiny.carla.org/carla-${CARLA_FILENAME}
             else
-                echo "File already exists: ${CARLA_VERSION}.tar.gz"
+                echo "File already exists: ${CARLA_FILENAME}.tar.gz"
             fi
-            mkdir -p ${CARLA_VERSION}
-            cd ${CARLA_VERSION} || return 1
-            tar -I pigz -xvf ../${CARLA_VERSION}.tar.gz || return 1
+            mkdir -p ${CARLA_FILENAME}
+            cd ${CARLA_FILENAME} || return 1
+            tar -I pigz -xvf ../${CARLA_FILENAME}.tar.gz || return 1
 
             # Additional maps
             cd Import || return 1
-            wget https://tiny.carla.org/additional-maps-0-9-15-linux || return 1
+            wget -O additional-maps-${CARLA_VERSION}.tar.gz https://tiny.carla.org/additional-maps-${CARLA_VERSION} || return 1
             cd ..
             bash ImportAssets.sh || return 1
+
+            echo "Successfully installed Carla at ${CARLA_ROOT}"
 
             # rm -r carla-0-9-15-linux Import/additional-maps-0-9-15-linux
         else
             cd ${CARLA_ROOT}
             echo "Carla already installed at $(pwd)"
         fi
-
-        # .bashrcにCARLA_ROOTが設定されいない場合は設定
-        # grep -q "export CARLA_ROOT=" ~/.bashrc || echo "export CARLA_ROOT=$(pwd)" >> ~/.bashrc || return 1
-
-        echo "Successfully installed Carla at ${CARLA_ROOT}"
-        return 0
     )
-
-    if [[ $? -eq 0 ]]; then
-        # Set CARLA_ROOT environment variable
-        CARLA_ROOT=$(_cr-find-carla)
-        local RET=$(
-            # Get absolute path
-            cr-cd
-            cd $CARLA_ROOT
-            echo $(pwd)
-        )
-        CARLA_ROOT=$RET
-        export CARLA_ROOT
-    fi
 }
 
 function _cr-install-carla-egg {
@@ -165,6 +149,7 @@ function cr-initial-setup {
         echo "Conda environment setup failed."
     fi
 
+    _cr-install-carla
     _cr-find-carla
     _cr-install-carla-egg
 
