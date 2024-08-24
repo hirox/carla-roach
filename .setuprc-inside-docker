@@ -96,7 +96,11 @@ function _cr-install-carla {
             CARLA_VERSION=0-9-15-linux
             CARLA_FILENAME=carla-${CARLA_VERSION}
             if [ ! -f ${CARLA_FILENAME}.tar.gz ]; then
-                wget -O ${CARLA_FILENAME}.tar.gz https://tiny.carla.org/carla-${CARLA_FILENAME}
+                wget -O ${CARLA_FILENAME}.tar.gz https://tiny.carla.org/${CARLA_FILENAME}
+                if [ $? -ne 0 ]; then
+                    echo "Failed to download Carla."
+                    return 1
+                fi
             else
                 echo "File already exists: ${CARLA_FILENAME}.tar.gz"
             fi
