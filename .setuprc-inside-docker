@@ -67,7 +67,7 @@ function _cr-find-carla {
         fi
     )
 
-    if [[ $? -eq 0 ]]; then
+    if [[ $? -eq 0 && -n "${RET}" ]]; then
         # Set CARLA_ROOT environment variable
         local ABSOLUTE_PATH=$(
             # Get absolute path
