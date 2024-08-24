@@ -77,6 +77,8 @@ function _cr-find-carla {
         )
         CARLA_ROOT=$ABSOLUTE_PATH
         export CARLA_ROOT
+    else
+        unset CARLA_ROOT
     fi
 }
 
