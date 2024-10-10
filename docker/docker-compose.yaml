@@ -13,6 +13,7 @@ services:
         reservations:
           devices:
             - driver: nvidia
+              count: all
               capabilities: [compute, utility, video, graphics, display]
     cap_add:
       - SYS_ADMIN # for fuse
